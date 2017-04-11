@@ -198,14 +198,14 @@ cchaid <- function(formula,
 #   return (int)y;
 # }
 
-data<-WorkDuration
+#data<-WorkDuration
 
-formula <- (Dur ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend + Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag + Dn.dag + Darb + Dpop)
+#formula <- (Dur ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend + Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag + Dn.dag + Darb + Dpop)
 #formula <- (Dur.ratio ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend + Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag + Dn.dag + Darb + Dpop + Dur)
 #formula <- (Stfix ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend + Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag + Dn.dag + Darb + Dpop + Act + yWo + Dur + yNep + Ratio + Inter + BT + T1 + T2 + T3 + T4 + T5 + T6 + T7 + T8)
 #formula <- (Dur.fix ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend + Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag + Dn.dag + Darb + Dpop + Act + yWo + Dur + yNep + Ratio + Inter + BT + T1 + T2 + T3 + T4 + T5 + T6 + T7 + T8)
 
-mytree <- cchaid(formula, data = data, weights = NULL, minbucket = 57, minsplit = 114, alpha_split=0.05, alpha_merge=0.05, max_depth = 8)
+#mytree <- cchaid(formula, data = data, weights = NULL, minbucket = 57, minsplit = 114, alpha_split=0.05, alpha_merge=0.05, max_depth = 8)
 #mytree <- cchaid(formula, data = aidwork4, weights = NULL, minbucket = 50, minsplit = 100, alpha_split=0.05, alpha_merge=0.05, max_depth = 8)
 #mytree <- cchaid(formula, data = actsec3, weights = NULL, minbucket = 50, minsplit = 100, alpha_split=0.05, alpha_merge=0.05, max_depth = 8)
 #mytree <- cchaid(formula, data = actsec5, weights = NULL, minbucket = 50, minsplit = 100, alpha_split=0.05, alpha_merge=0.05, max_depth = 8)
