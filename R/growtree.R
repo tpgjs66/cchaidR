@@ -47,7 +47,7 @@ growtree <- function(id = 1L,
   ## if alpha_split is reached, stop here
   if (min(unlist(sp[[1]][[6]])) > alpha_split) return(partynode(id = id))
 
-  print(paste("Depth :", length(parent),
+  #print(paste("Depth :", length(parent),
               ",  chosen variable: " ,
               names(data[sp[[1]][[1]]])))
 
