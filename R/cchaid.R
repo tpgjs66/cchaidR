@@ -1,4 +1,3 @@
-﻿
 #' @title Chi-squared Automated Interaction Detection for continuous response
 #'  variable and tree
 #'
