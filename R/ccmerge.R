@@ -118,7 +118,7 @@ merging_loop <- function(response, data, y, i, minbucket, alpha_merge) {
     ## which prevents to do pairwise t-test,
     ## merge one of them with the most similar category
 
-    if(length(table(data[,i])[table(data[,i])==1]) >= 2) {
+    if(length(table(data[,i])[table(data[,i])==1]) >= 1) {
       category_single_obs <- names(which(table(data[,i]) == 1))
 
       ## NOTE: An allowable pair of categories for "nominal" predictor is any
