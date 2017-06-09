@@ -146,7 +146,8 @@ merging_loop <- function(response, data, y, i, minbucket, alpha_merge) {
       ## NOTE: An allowable pair of categories for "ordered" predictor is two
       ##       adjacent categories.
       } else if (class(data[,i])[1]=="ordered") {
-        n <- length(category_single_obs)
+        n <- length(category_
+                    _obs)
         for (x in n:1) {
           r <- category_single_obs[x]
           r_mean <- mean(data[,response][data[,i]== r])
@@ -206,7 +207,10 @@ merging_loop <- function(response, data, y, i, minbucket, alpha_merge) {
       repeat{
       k <- k+1  # ADD  1 to loop index
       l <- length(levels(data[,i])) # Number of categories for predictor i
-
+      
+      ## Break if there is a single observation on category  
+      if(length(table(data[,i])[table(data[,i])==1])!=0){break}  
+        
       ## Pairwise t.test to get p.value matrix
       p =(pairwise.t.test(data[, response],
                          data[,i],p.adjust.method = "none",
