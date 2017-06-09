@@ -146,8 +146,7 @@ merging_loop <- function(response, data, y, i, minbucket, alpha_merge) {
       ## NOTE: An allowable pair of categories for "ordered" predictor is two
       ##       adjacent categories.
       } else if (class(data[,i])[1]=="ordered") {
-        n <- length(category_
-                    _obs)
+        n <- length(category_single_obs)
         for (x in n:1) {
           r <- category_single_obs[x]
           r_mean <- mean(data[,response][data[,i]== r])
