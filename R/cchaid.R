@@ -131,13 +131,14 @@ cchaid <- function(formula,
   if(isTRUE(max_depth == -1) | is.null(max_depth)){
     max_depth <- .Machine$integer.max
     }
-
+    
   ## name of the response variable and independent variables
+  allvars<- all.vars(formula)
   response <- all.vars(formula[[2]])
   vars<- all.vars(formula[[3]])
-  ## Drop the first column "Nr"
-  #drops<-c("Nr")
-  #data<-data[ , !(names(data) %in% drops)]
+
+  ## Drop the variable not specifieds in formula
+  data <- subset(data,select=allvars)
 
   ## data without missing values, response comes last
   #data <- data[complete.cases(data), c(all.vars(formula)[-1], response)]
