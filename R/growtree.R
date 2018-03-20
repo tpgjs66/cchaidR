@@ -11,12 +11,12 @@ growtree <- function(id = 1L,
                      alpha_merge,
                      max_depth) {
 
-  ## for less than MINsplit, stop here
+  ## for less than Minsplit, stop here
   if (sum(weights) < minsplit) return(partynode(id = id))
 
   ## stop when max_depth is reached
-  if (max_depth == length(parent)) return(partynode(id = id))
-    
+  if (max_depth == length(parent) ) return(partynode(id = id))
+
   ## stop no more variable left
   if (length(data)-length(parent)==1) return(partynode(id = id))
 
@@ -37,6 +37,7 @@ growtree <- function(id = 1L,
   }
 
   ## NEEDED to be fixed: GOTO findsplit
+
   ## stop when min_bucket is reached
   split_bucket <- c()
   for(i in 1:length(sp[[3]])){
@@ -48,6 +49,10 @@ growtree <- function(id = 1L,
 
   ## if alpha_split is reached, stop here
   if (min(unlist(sp[[1]][[6]])) > alpha_split) return(partynode(id = id))
+
+  print(paste("Depth :", length(parent),
+              ",  chosen variable: " ,
+              names(data[sp[[1]][[1]]])))
 
   ## actually split the data
   kidids <- kidids_split(sp[[1]], data = data)
