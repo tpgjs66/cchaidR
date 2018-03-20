@@ -10,9 +10,9 @@ ccmerge <- function(response, vars, data = x, minbucket, alpha_merge = 0.05) {
   ## Detect each column on its data_type -> function to be used is class;
   ## and send it to its appropriate function for merging loop
     #n <- colnames(data[, -c(ncol(data)),drop=F])
-    n <- colnames(data[, -which(names(data) %in% response), drop = F])
+    #n <- colnames(data[, -which(names(data) %in% response), drop = F])
     #t <- vars
-    #n <- vars
+    n <- vars
 
   ## Initialization of lists to store adjusted p-value and merged category data
   p_adj_list<-list()
