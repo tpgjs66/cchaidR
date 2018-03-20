@@ -26,7 +26,7 @@ ccmerge <- function(response, vars, data = x, minbucket, alpha_merge = 0.05) {
 
     # Get adj. p-values and merged data[,i] with Bonferroni correction,
     # which is an output of "merging_loop" function
-    merging_result[[i]]<-merging_loop(response, data, data[,i], i, minbucket, alpha_merge)
+    merging_result[[i]]<-try(merging_loop(response, data, data[,i], i, minbucket, alpha_merge))
 
     # A list to store p_adj for respective predictor i
     p_adj_list[i]<-merging_result[[i]][1]
@@ -208,7 +208,7 @@ merging_loop <- function(response, data, y, i, minbucket, alpha_merge) {
       l <- length(levels(data[,i])) # Number of categories for predictor i
 
       ## Pairwise t.test to get p.value matrix
-      p =(pairwise.t.test(data[, response],
+      p =try(pairwise.t.test(data[, response],
                          data[,i],p.adjust.method = "none",
                          paired = FALSE, pool.sd = FALSE,
                          var.equal = TRUE))$p.value
@@ -317,7 +317,7 @@ merging_loop <- function(response, data, y, i, minbucket, alpha_merge) {
 
       if (!any((c(colnames(p),rownames(p)))==m)) {
         ## Pairwise t.test to get p.value matrix
-        p = (pairwise.t.test(data[, response],
+        p = try(pairwise.t.test(data[, response],
                              data[,i],
                              p.adjust.method = "none",
                              paired = FALSE,
