@@ -1,5 +1,5 @@
 ## This is ccmerge
-ccmerge <- function(response, vars, data = x, minbucket, alpha_merge = 0.05) {
+ccmerge <- function(response, vars, data, minbucket, alpha_merge = 0.05) {
 
   ## Check data is dataframe and alpha_merge <= 1
   if (!is.data.frame(data))
