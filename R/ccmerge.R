@@ -1,5 +1,5 @@
 ## This is ccmerge
-ccmerge <- function(response, vars, data, minbucket, alpha_merge = 0.05) {
+ccmerge <- function(response, vars, data = x, minbucket, alpha_merge = 0.05) {
 
   ## Check data is dataframe and alpha_merge <= 1
   if (!is.data.frame(data))
@@ -118,7 +118,7 @@ merging_loop <- function(response, data, y, i, minbucket, alpha_merge) {
     ## which prevents to do pairwise t-test,
     ## merge one of them with the most similar category
 
-    if(length(table(data[,i])[table(data[,i])==1]) >= 1) {
+    if(length(table(data[,i])[table(data[,i])==1]) >= 2) {
       category_single_obs <- names(which(table(data[,i]) == 1))
 
       ## NOTE: An allowable pair of categories for "nominal" predictor is any
@@ -206,10 +206,7 @@ merging_loop <- function(response, data, y, i, minbucket, alpha_merge) {
       repeat{
       k <- k+1  # ADD  1 to loop index
       l <- length(levels(data[,i])) # Number of categories for predictor i
-      
-      ## Break if there is a single observation on category  
-      if(length(table(data[,i])[table(data[,i])==1])!=0){break}  
-        
+
       ## Pairwise t.test to get p.value matrix
       p =(pairwise.t.test(data[, response],
                          data[,i],p.adjust.method = "none",
