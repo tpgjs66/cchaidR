@@ -12,7 +12,7 @@ findsplit <- function(response,
   ## weight is deployed for subsetting original data for recursion purpose.
   ## However, still it is needed to drop parent predictor(s).
   data_for_recursion <- data[as.logical(weights),]
-data_for_recursion <- as.data.frame(data_for_recursion)
+  data_for_recursion <- as.data.frame(data_for_recursion)
   ## For the first split, there is no parent predictor.
   if(is.null(parent)){
     data_for_recursion <- data_for_recursion
@@ -24,6 +24,7 @@ data_for_recursion <- as.data.frame(data_for_recursion)
   if (ncol(data_for_recursion) != 1){
   data_for_recursion <- droplevels(data_for_recursion)
   }
+
   ## MERGE insignificant categories for each predictor
   merged <- ccmerge(response, vars, data_for_recursion, minbucket, alpha_merge)
 
