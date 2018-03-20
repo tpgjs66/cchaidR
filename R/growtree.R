@@ -11,12 +11,14 @@ growtree <- function(id = 1L,
                      alpha_merge,
                      max_depth) {
 
-  ## for less than MINBUCKET, stop here
-  ## !!CHECK MINBUCKET VS MINSPLIT!!
+  ## for less than MINsplit, stop here
   if (sum(weights) < minsplit) return(partynode(id = id))
 
   ## stop when max_depth is reached
-  if (max_depth == length(parent) ) return(partynode(id = id))
+  if (max_depth == length(parent)) return(partynode(id = id))
+    
+  ## stop no more variable left
+  if (length(data)-length(parent)==1) return(partynode(id = id))
 
   ## Find best split ###########
   sp <- findsplit(response,
