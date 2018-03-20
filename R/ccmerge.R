@@ -1,219 +1,440 @@
+## This is ccmerge
+ccmerge <- function(response, vars, data = x, minbucket, alpha_merge = 0.05) {
 
-#' @title Chi-squared Automated Interaction Detection for continuous response
-#'  variable and tree
-#'
-#' @description Fits a classification tree by the CHAID algorithm for
-#' continuous response variable
-#'
-#' @param formula an object of class formula (or one that can be coerced to
-#' that class): a symbolic description of the model to be fitted. Response
-#' variable should be continuous and all predictors should be categorical
-#' (either ordered or not).
-#' @param weights an optional vector of weights to be used in the fitting
-#' process. Should be NULL or a numeric vector.
-#' @param minbucket Minimum number of observations in terminal nodes.
-#' @param minsplit Number of observations in splitted response at which
-#' no further split is desired.
-#' @param alpha_split Level of significance used for splitting of a node
-#' in the most significant predictor
-#' @param alpha_merge Level of significance used for merging of predictor
-#' categories
-#' @param max_depth Maximum depths for the tree
-#' @details The CHAID algorithm is originally proposed by Kass (1980) which
-#' allow multiple splits of a node. The current implementation only accepts
-#' continuous response variable and categorical predictors (nominal or ordinal).
-#' If response variable is categorical, refer to \code{\link[CHAID]{chaid}}.
-#' CHAID consist of three steps: merging, splitting and stopping.
-#' A tree is grown by repeatedly using the three steps below on each
-#' node starting from the root node.
-#'\itemize{
-#'\item Merging: For each predictor variable X, merge non-significant
-#' categories. Each final category of X will result in one child node if X is
-#' used to split the node. The merging step also calculates the adjusted p-value
-#' that is to be used in the splitting step.
-#' \itemize{
-#' \item 1. If X has 1 category only, stop and set the adjusted p-value to be 1.
-#' \item 2. If X has 2 categories, go to step 8.
-#' \item 3. Else, find the allowable pair of categories of X (an allowable pair
-#' of categories for ordinal predictor is two adjacent categories, and for
-#' nominal predictor is any two categories) that is least significantly
-#' different (i.e., most similar). The most similar pair is pair whose test
-#' statistic gives the largest p-value with respect to the dependent variable Y.
-#' \item 4. For the pair having the largest p-value, check if its p-value is
-#' larger than a user-specified alpha-level α merge (alpha_merge). If it does,
-#' this pair is merged into a single compound category. Then a new set of
-#' categories of X is formed. If it does not, then go to step 7.
-#' \item 5. (Optional) If the newly formed compound category consists of three
-#' or more original categories, then find the best binary split within the
-#' compound category which p-value is the smallest. Perform this binary split
-#' if its p-value is not larger than an alpha-level split-merge α
-#' (alpha_spli-merge).
-#' \item 6. Go to step 2.
-#' \item 7. (Optional) Any category having too few observations (as compared
-#' with a user-specified minimum segment size) is merged with the most similar
-#' other category as measured by the largest of the p-values.
-#' \item 8. The adjusted p-value is "mandatorily" computed for the merged
-#' categories by applying Bonferroni adjustments.
-#'}
-#'\item Splitting: The “best” split for each predictor is found in the merging
-#' step. The splitting step selects which predictor to be used to best split
-#' the node. Selection is accomplished by comparing the adjusted p-value
-#' associated with each predictor. The adjusted p-value is obtained in the
-#' merging step.
-#' \itemize{
-#'  \item 1. Select the predictor that has the smallest adjusted p-value
-#'  (i.e., most significant).
-#'  \item 2. If this adjusted p-value is less than or equal to a user-specified
-#'  alpha-level split α (alpha_split), split the node using this predictor.
-#'  Else, do not split and the node is considered as a terminal node.
-#' }
-#'\item Stopping: The stopping step checks if the tree growing process should
-#' be stopped according to the following stopping rules.
-#'  \itemize{
-#'\item 1. If a node becomes pure; that is, all cases in a node have identical
-#' values of the dependent variable, the node will not be split.
-#'\item 2. If all cases in a node have identical values for each predictor,
-#' the node will not be split.
-#'\item 3. If the current tree depth reaches the user specified maximum tree
-#' depth limit value, the tree growing process will stop.
-#'\item 4. If the size of a node is less than the user-specified minimum node
-#' size value, the node will not be split.
-#'\item 5. If the split of a node results in a child node whose node size is
-#' less than the userspecified minimum child node size value, child nodes that
-#' have too few cases (as compared with this minimum) will merge with the most
-#' similar child node as measured by the largest of the p-values. However, if
-#' the resulting number of child nodes is 1, the node will not be split.
-#' }
-#' }
-#' @return An object of class constparty, see package
-#'  \code{\link[partykit]{party}}.
-#' @export
-#' @references Kass, G. V. (1980). An exploratory technique for investigating
-#' large quantities of categorical data. Applied statistics, 119-127.\cr
-#' Hothorn T, Zeileis A (2015). partykit: A Modular Toolkit for
-#' Recursive Partytioning in R. Journal of Machine Learning Research,
-#' 16, 3905–3909.
-#' @seealso \code{\link[CHAID]{chaid}} \code{\link[partykit]{ctree}}
-#' \code{\link[partykit]{glmtree}}
-#'
-#' @examples
-#' library("cchaid")
-#' require("partykit")
-#'
-#' set.seed(100)
-#' WorkDurationS <- WorkDuration[sample(1:nrow(WorkDuration), 1000),]
-#' formula <- (Dur ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend +
-#'             Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag +
-#'             Dn.dag + Darb + Dpop)
-#' mytree <- cchaid(formula,data = WorkDurationS, weights = NULL, minbucket = 57,
-#'                  minsplit = 114, alpha_split=0.05, alpha_merge=0.05,
-#'                  max_depth = 8)
-#' mytree
-#' plot(mytree)
+  ## Check data is dataframe and alpha_merge <= 1
+  if (!is.data.frame(data))
+    stop("data is not a dataframe", call. = TRUE)
+  if (alpha_merge > 1)
+    warning("p value provided for alpha_merge should be <=1", call. = TRUE)
 
+  ## Detect each column on its data_type -> function to be used is class;
+  ## and send it to its appropriate function for merging loop
+    #n <- colnames(data[, -c(ncol(data)),drop=F])
+    n <- colnames(data[, -which(names(data) %in% response), drop = F])
+    #t <- vars
+    #n <- vars
 
+  ## Initialization of lists to store adjusted p-value and merged category data
+  p_adj_list<-list()
+  merged<-list()
 
-##--------------------------------------------------------------------------##
-#                                                                            #
-#                       MAIN FUNCTION CALLED BY THE USER                     #
-#                                                                            #
-##--------------------------------------------------------------------------##
+  ## Initialization of a list to get the result of merging_loop
+  merging_result<-vector("list")
 
-cchaid <- function(formula,
-                   data,
-                   weights = NULL,
-                   minbucket = 100,
-                   minsplit = 200,
-                   alpha_split = 0.05,
-                   alpha_merge = 0.05,
-                   max_depth = 10) {
+  ## Start merging loop for each predictor i
+  for (i in n) {
 
-  ## max_depth check
-  if(isTRUE(max_depth == -1) | is.null(max_depth)){
-    max_depth <- .Machine$integer.max
-    }
+    # Get adj. p-values and merged data[,i] with Bonferroni correction,
+    # which is an output of "merging_loop" function
+    merging_result[[i]]<-merging_loop(response, data, data[,i], i, minbucket, alpha_merge)
 
-  ## name of the response variable and independent variables
-  allvars<- all.vars(formula)
-  response <- all.vars(formula[[2]])
-  vars<- all.vars(formula[[3]])
+    # A list to store p_adj for respective predictor i
+    p_adj_list[i]<-merging_result[[i]][1]
 
-  ## Drop the variable not specifieds in formula
-  data <- subset(data,select=allvars)
+    # A list to store merged category for respective predictor i
+    merged[i]<-merging_result[[i]][2]
+  }
 
+  # Binding merged category data with response variable
+  # NOTE: Response variable should be placed at the end column of dataframe.
+  merged<-cbind(merged,data[length(data)])
 
-  ## Drop the first column "Nr"
-  #drops<-c("Nr")
-  #data<-data[ , !(names(data) %in% drops)]
-
-  ## data without missing values, response comes last
-  #data <- data[complete.cases(data), c(all.vars(formula)[-1], response)]
-
-  ## data is factors only
-  ## stopifnot(all(sapply(data, is.factor)))
-
-  if(is.null(weights)) weights <- rep(1L, nrow(data))
-  ## weights are case weights, i.e., integers
-  stopifnot(length(weights) == nrow(data) &
-              max(abs(weights - floor(weights))) < .Machine$double.eps)
-
-  ## Initialize a list to store parent nodes
-  parent <- c()
-
-  ## grow tree
-  nodes <- growtree(id = 1L,
-                    response,
-                    vars,
-                    data,
-                    weights,
-                    parent,
-                    minbucket,
-                    minsplit,
-                    alpha_split,
-                    alpha_merge,
-                    max_depth)
-
-  ## compute terminal node number for each observation
-  fitted <- fitted_node(nodes, data = data)
-  ## return rich constparty object
-  ret <- party(nodes, data = data,
-               fitted = data.frame("(fitted)" = fitted,
-                                   "(response)" = data[[response]],
-                                   "(weights)" = weights,
-                                   check.names = FALSE),
-               terms = terms(formula))
-  as.constparty(ret)
+  return(list(p_adj_list,merged))
 }
 
-## minbucket calculation
-#
-# int detmincas(int d,int n)
-# {  float y;
-#
-#   if (d==0) { //discreet
-#     y=(float)n/150;
-#     if (y<75) y=75;
-#     if (y>150) y=150;
-#   }
-#   else {   //continue
-#     y=(float)n/200;
-#     if (y<50) y=50;
-#     if (y>100) y=100;
-#   }
-#   return (int)y;
-# }
 
-#data<-WorkDuration
-
-#formula <- (Dur ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend + Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag + Dn.dag + Darb + Dpop)
-#formula <- (Dur.ratio ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend + Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag + Dn.dag + Darb + Dpop + Dur)
-#formula <- (Stfix ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend + Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag + Dn.dag + Darb + Dpop + Act + yWo + Dur + yNep + Ratio + Inter + BT + T1 + T2 + T3 + T4 + T5 + T6 + T7 + T8)
-#formula <- (Dur.fix ~ Urb + Comp + Child + Day + pAge + SEC + Ncar + Gend + Driver + wstat + Pwstat + Xdag + Xn.dag + Xarb + Xpop + Ddag + Dn.dag + Darb + Dpop + Act + yWo + Dur + yNep + Ratio + Inter + BT + T1 + T2 + T3 + T4 + T5 + T6 + T7 + T8)
-
-#mytree <- cchaid(formula, data = data, weights = NULL, minbucket = 57, minsplit = 114, alpha_split=0.05, alpha_merge=0.05, max_depth = 8)
-#mytree <- cchaid(formula, data = aidwork4, weights = NULL, minbucket = 50, minsplit = 100, alpha_split=0.05, alpha_merge=0.05, max_depth = 8)
-#mytree <- cchaid(formula, data = actsec3, weights = NULL, minbucket = 50, minsplit = 100, alpha_split=0.05, alpha_merge=0.05, max_depth = 8)
-#mytree <- cchaid(formula, data = actsec5, weights = NULL, minbucket = 50, minsplit = 100, alpha_split=0.05, alpha_merge=0.05, max_depth = 8)
+##--------------------------------------------------------------------------##
+# FUNCTION BELOW MERGES INSIGNIFICANT CATEGORIES WITHIN EACH nominal COLUMN
+# data[,i] OF DATAFRAME data AND RETURNS ADJ. P-VALUE list and merged categories
+##--------------------------------------------------------------------------##
 
 
+merging_loop <- function(response, data, y, i, minbucket, alpha_merge) {
+
+  # Number of categories for predictor i
+  l = length(levels(data[,i]))
+  merged_category<-vector("list")
+
+  ## If X has 1 category only (i.e., pure),
+  ## Stop merging process and set the adjusted p-value to be 1
+  if (l == 1){
+
+    ## The results of merging_loop: p_aov, merged_category
+    ## These lines of code always have to stick together
+    ## NOTE: Do not need bonferroni correction when there is no merging
+    p_aov <- 1
+    merged_category <- data[,i]
+
+  ## If X has 2 categories, adjusted p-value is computed for the category
+  ## by applying Bonferroni adjustments (c=2, r={1,2}).
+  }else if (l == 2){
+
+    ## Check minbucket here!!
+    ## If the split of a node results in a child node whose node size is
+    ## less than "minbucket", corresponding child nodes will be merged with
+    ## the most similar child node as measured by the largest of the p-values.
+    ## NOTE: If X has only 2 categories, as in this case, child nodes will be
+    ## merged each other and results single merged category.
+    if (any(table(data[,i]) < minbucket)){
+      r <- names(table(data[,i])[2])
+      c <- names(table(data[,i])[1])
+      nameofMergedCategory <- paste(r, c, sep = "-")
+      data[,i] <- merging_function(data, y, r, c, nameofMergedCategory, i)
+
+      p_aov <- 1
+      merged_category <- data[,i]
+
+      ## Bonferroni correction
+      number_original_category <- 2
+      number_merged_category <- 1
+      b <- Bonferroni_correction(type = class(data[,i])[1],
+                                 o = number_original_category,
+                                 m = number_merged_category)
+      if (p_aov * b > 1) {
+        p_aov = 1
+      } else {
+        p_aov = p_aov * b
+      }
+
+    }else{
+
+    ## The results of merging_loop: p_aov, merged_category
+    ## These lines of code always have to stick together
+    p_aov = as.matrix(summary((aov(data[, response]~data[,i]
+                                   ,data)))[[1]][,5])[1]
+    merged_category <- data[,i]
+    }
+
+  ## If X has more than 2 categories, find the allowable pair of categories of X
+  ## (an allowable pair of categories for ordinal predictor is two adjacent
+  ## categories, and for nominal predictor is any two categories) that is
+  ## least significantly different (i.e., most similar).
+  ## The most similar pair is the pair whose test statistic gives the
+  ## largest p-value with respect to the response variable Y.
+  }else{
+    k<-c(0)    # index for merging loop
+
+    ## If X has more than two categories with a single observeation,
+    ## which prevents to do pairwise t-test,
+    ## merge one of them with the most similar category
+
+    if(length(table(data[,i])[table(data[,i])==1]) >= 2) {
+      category_single_obs <- names(which(table(data[,i]) == 1))
+
+      ## NOTE: An allowable pair of categories for "nominal" predictor is any
+      ##       categories.
+      if(class(data[,i])[1]=="factor"){
+        n <- length(category_single_obs)
+        for (x in n:2) {
+          r <- category_single_obs[x]
+          r_mean <- mean(data[,response][data[,i]== r])
+
+          c_list <- names(table(data[,i]))[!names(table(data[,i])) %in% r]
+          c_list_mean <- c()
+
+            for (z in 1:length(c_list)){
+              c_list_mean[z] <- mean(data[,response][data[,i]== c_list[z]])
+            }
+
+          names(c_list_mean)<- c_list
+          c <- names(which.min(abs(c_list_mean - r_mean)))
+          nameofMergedCategory <- paste(r, c, sep = "-")
+          data[,i] <- merging_function(data, y, r, c, nameofMergedCategory, i)
+
+          if(length(table(data[,i])[table(data[,i])==1]) <= 1){break}
+        }
+      ## NOTE: An allowable pair of categories for "ordered" predictor is two
+      ##       adjacent categories.
+      } else if (class(data[,i])[1]=="ordered") {
+        n <- length(category_single_obs)
+        for (x in n:1) {
+          r <- category_single_obs[x]
+          r_mean <- mean(data[,response][data[,i]== r])
+          c_list <- names(table(data[,i]))[!names(table(data[,i])) %in% r]
+
+          ## "NAs introduced by coercion" warning message may appear here.
+          ## Find adjacent categories (tt==1)
+          suppressWarnings(
+            tt <- abs(as.numeric(names(table(data[,i]))
+                                 [!names(table(data[,i])) %in% r])
+                      - as.numeric(r))
+            )
+
+          names(tt) <- c_list
+
+          ## A list only contains adjacent categories
+          c_list_adjacent <- names(tt[tt %in% 1])
+
+          c_list_adjacent_mean <- c()
+
+          ## Calculate mean difference to examine similarity
+            if(length(c_list_adjacent) >= 2) {
+              for (z in 1:length(c_list)){
+                c_list_adjacent_mean[z] <-
+                  mean(data[,response][data[,i]== c_list_adjacent[z]])
+              }
+              names(c_list_adjacent_mean)<- c_list_adjacent
+              c <- names(which.min(abs(c_list_adjacent_mean - r_mean)))
+
+            }else if(length(c_list_adjacent) == 1){
+              c <- c_list_adjacent
+
+            }else {
+              next
+            }
+
+          nameofMergedCategory <- paste(r, c, sep = "-")
+          data[,i] <- merging_function(data, y, r, c, nameofMergedCategory, i)
+
+          ## Break if there is less than 2 category with a single observation
+          if(length(table(data[,i])[table(data[,i]) == 1]) < 2){break}
+        }
+          ## Though there are more than 2 categories with single observation,
+          ## if the function cannot find allowable pair of categories to be
+          ## merged for ordered predictor,
+          ## there will be no merging and return p-value as 1.
+          if(!exists("nameofMergedCategory")){
+
+              p_aov <- 1
+              merged_category <- data[,i]
+
+              return(list(p_aov,merged_category))
+          }
+      } else {warning("Variable is not factor type")}
+    }
+
+      repeat{
+      k <- k+1  # ADD  1 to loop index
+      l <- length(levels(data[,i])) # Number of categories for predictor i
+
+      ## Pairwise t.test to get p.value matrix
+      p =(pairwise.t.test(data[, response],
+                         data[,i],p.adjust.method = "none",
+                         paired = FALSE, pool.sd = FALSE,
+                         var.equal = TRUE))$p.value
+
+      if(any(dim(p)==0)) {break}
+
+      if(class(data[,i])[1]=="factor"){
+        ## This picks the max p value for nominal predictor,
+        ## which means the least significant pair.
+        p_max_value = max(p, na.rm = TRUE)
+      }else if(class(data[,i])[1]=="ordered"){
+        ## This picks the max p value ordinal predictor,
+        ## which means the least significant pair.
+        p_max_value = max(diag(p), na.rm = TRUE)
+      }else {
+        warning("Variable is not factor type")
+      }
+
+      p_max = which(p == max(p_max_value, na.rm = TRUE), arr.ind = TRUE)
+      r <- rownames(p)[p_max[, 1]]
+      c <- colnames(p)[p_max[, 2]]
+
+      ## Do Wilcox test if Normality assumption is violated (i.e., # obs. < 30)
+      if((length(data[data[,i]==r,response]) < 30 |
+          length(data[data[,i]==c,response]) < 30)){
+
+        wilcox_p_max_value <-
+          round(wilcox.test(data[data[,i]==r,response],
+                            data[data[,i]==c,response],
+                            exact=FALSE)$p.value,digits=2)
+
+        ## Break the loop if stopping criteria is reached
+        if(l==2 | (wilcox_p_max_value < alpha_merge)) {break}
+
+        #------- MERGED HERE WITH A HYPHEN
+        else(nameofMergedCategory <- paste(r, c, sep = "-"))
+
+        # CALL MERGING FUNCTION here for actual merging
+        data[,i]<-merging_function(data, y, r, c, nameofMergedCategory, i)
+
+      ## Break the loop if stopping criteria is reached
+      } else if(l==2 | p_max_value < alpha_merge) {break}
+
+      ## Merging categories if both category obs. > 30
+      else{
+        p_max = which(p == max(p_max_value, na.rm = TRUE), arr.ind = TRUE)
+        r <- rownames(p)[p_max[, 1]]
+        c <- colnames(p)[p_max[, 2]]
+
+        #------- MERGED HERE WITH A HYPHEN
+        nameofMergedCategory <- paste(r, c, sep = "-")
+
+        # CALL MERGING FUNCTION here for actual merging
+        data[,i] <- merging_function(data, y, r, c, nameofMergedCategory, i)
+
+      }
+
+    }
+
+    ##### This lines of code always have to stick together
+    p_aov =
+      as.matrix(summary((aov(data[, response]~data[,i],data)))[[1]][,5])[1]
+    merged_category <- data[,i]
+
+    ## Bonferroni correction
+    number_original_category <- length(levels(y))
+    number_merged_category <- length(levels(data[,i]))
+    b <- Bonferroni_correction(type = class(data[,i])[1],
+                               o = number_original_category,
+                               m = number_merged_category)
+    if (p_aov * b > 1) {
+      p_aov = 1
+    } else {
+      p_aov = p_aov * b
+    }
+
+  ## Check minbucket here
+  ## Any category having too few observations (as compared with a user-specified
+  ## minimum segment size) is merged with the most similar other category
+  ## as measured by the largest of the p-values.
+  while(any(table(data[,i]) < minbucket)){
+
+    if(any(table(data[,i]) == 1)){
+      p_aov = 1
+      merged_category <- data[,i]
+
+      break
+
+    } else if(length(levels(data[,i])) == 2){
+      c <- names(table(data[,i])[1])
+      r <- names(table(data[,i])[2])
+
+      #------- MERGED HERE WITH A HYPHEN
+      nameofMergedCategory <- paste(r, c, sep = "-")
+
+      # CALL MERGING FUNCTION here for actual merging
+      data[,i] <- merging_function(data, y, r, c, nameofMergedCategory, i)
+
+      # Set p_aov as 1 and stop merging
+      p_aov <- 1
+      merged_category <- data[,i]
+
+    }else {
+
+      m <- names(which.min(table(data[,i])))
+
+      if (!any((c(colnames(p),rownames(p)))==m)) {
+        ## Pairwise t.test to get p.value matrix
+        p = (pairwise.t.test(data[, response],
+                             data[,i],
+                             p.adjust.method = "none",
+                             paired = FALSE,
+                             pool.sd = FALSE,
+                             var.equal = TRUE))$p.value
+      }
+
+      if (any(colnames(p) == m) & any(rownames(p) == m)) {
+
+        if (class(data[,i])[1]=="factor"){
+          p_max_value = max(p[m,],p[,m], na.rm=TRUE)
+          p_max = which(p == max(p_max_value, na.rm = TRUE), arr.ind = TRUE)
+          r <- rownames(p)[p_max[, 1]]
+          c <- colnames(p)[p_max[, 2]]
+
+        }else if (class(data[,i])[1]=="ordered") {
+          x <- c(p[m,],p[,m])
+          x2 <- x[diag(p) %in% x]
+
+          p_max_value = max(x2, na.rm=TRUE)
+          p_max = which(p == max(p_max_value, na.rm = TRUE), arr.ind = TRUE)
+          r <- rownames(p)[p_max[, 1]]
+          c <- colnames(p)[p_max[, 2]]
+
+        }else {warning("Variable is not factor type")}
+
+      } else if (m %in% rownames(p)){
+
+        if (class(data[,i])[1]=="factor"){
+          p_max_value = max(p[m,], na.rm=TRUE)
+          p_max = which(p == max(p_max_value, na.rm = TRUE), arr.ind = TRUE)
+          r <- rownames(p)[p_max[, 1]]
+          c <- colnames(p)[p_max[, 2]]
+
+        }else if (class(data[,i])[1]=="ordered") {
+          x <- c(p[m,])
+          x2 <- x[diag(p) %in% x]
+
+          p_max_value = max(x2, na.rm=TRUE)
+          p_max = which(p == max(p_max_value, na.rm = TRUE), arr.ind = TRUE)
+          r <- rownames(p)[p_max[, 1]]
+          c <- colnames(p)[p_max[, 2]]
+
+        }else {warning("Variable is not factor type")}
+
+      } else {
+
+        if (class(data[,i])[1]=="factor"){
+          p_max_value = max(p[,m], na.rm=TRUE)
+          p_max = which(p == max(p_max_value, na.rm = TRUE), arr.ind = TRUE)
+          r <- rownames(p)[p_max[, 1]]
+          c <- colnames(p)[p_max[, 2]]
+
+        }else if (class(data[,i])[1]=="ordered") {
+          x <- c(p[,m])
+          x2 <- x[diag(p) %in% x]
+
+          p_max_value = max(x2, na.rm=TRUE)
+          p_max = which(p == max(p_max_value, na.rm = TRUE), arr.ind = TRUE)
+          r <- rownames(p)[p_max[, 1]]
+          c <- colnames(p)[p_max[, 2]]
+
+        }else {warning("Variable is not factor type")}
+       }
+
+        #------- MERGED HERE WITH A HYPHEN
+        nameofMergedCategory <- paste(r, c, sep = "-")
+        # CALL MERGING FUNCTION here for actual merging
+        data[,i] <- merging_function(data, y, r, c, nameofMergedCategory, i)
+
+        p_aov =
+          as.matrix(summary((aov(data[, response]~data[,i],
+                                 data)))[[1]][,5])[1]
+        merged_category <- data[,i]
+
+        ## Bonferroni correction
+        number_original_category <- length(levels(y))
+        number_merged_category <- length(levels(data[,i]))
+        b <- Bonferroni_correction(type = class(data[,i])[1],
+                                   o = number_original_category,
+                                   m = number_merged_category)
+        if (p_aov * b > 1) {
+          p_aov = 1
+        } else {
+          p_aov = p_aov * b
+        }
+    }
+  }
+
+}
+  return(list(p_aov,merged_category))
+}
+
+
+merging_function <- function(data, y, r, c, nameofMergedCategory, i) {
+
+  list_of_levels = levels(data[,i])
+
+  for (q in seq_along(list_of_levels)) {
+    if (list_of_levels[q] == r || list_of_levels[q] == c) {
+      list_of_levels[q] = nameofMergedCategory
+    }
+  }
+  levels(data[,i]) <- list_of_levels
+  return(data[,i])
+}
+
+Bonferroni_correction <- function(type,o,m){
+  if(type=="ordered"){
+    b <- factorial(o-1)/((factorial(m-1)*factorial((o-1)-(m-1))))
+
+  }else if(type=="factor"){
+    b <- 0
+    for(i in 0:(m-1)){
+      b <- b + (-1)^(i)*(((m-i)^(o))/(factorial(i)*factorial(m-i)))
+    }
+  }
+  return(b)
+}
 
