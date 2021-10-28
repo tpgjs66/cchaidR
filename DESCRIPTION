@@ -5,7 +5,7 @@ Title: Chi-squared Automated Interaction Detection for continuous response
 Version: 0.1.0
 Author: Seheon Kim and Srirāma Bhamidipāti
 Maintainer: Seheon Kim <s.kim@tue.nl>
-Description: Fits a classification tree by the CHAID algorithm for continuous
+Description: Fits a regression tree by the CHAID algorithm for continuous
     response variable
 License: MIT
 Encoding: UTF-8
