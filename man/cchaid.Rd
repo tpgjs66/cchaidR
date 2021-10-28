@@ -19,7 +19,7 @@ process. Should be NULL or a numeric vector.}
 
 \item{minbucket}{Minimum number of observations in terminal nodes.}
 
-\item{minsplit}{Number of observations in splitted response at which
+\item{minsplit}{Number of observations in split response at which
 no further split is desired.}
 
 \item{alpha_split}{Level of significance used for splitting of a node
